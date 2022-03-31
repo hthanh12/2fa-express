@@ -15,6 +15,7 @@ const {
     ACTION
 } = require('../utils/helper')
 const moment = require('moment')
+const { generateContentMail } = require('../controller/mail-controller')
 exports.signUp = async (req, res) => {
     let {
         username,
@@ -39,10 +40,10 @@ exports.signUp = async (req, res) => {
         email: email,
         name: name || '',
         dob: dob || '',
-        type: type || User.TYPE_MEMBER,
-        status: User.STATUS_ACTIVE,
+        type: type || User.TYPE_MEMBER.value,
+        status: User.STATUS_ACTIVE.value,
         logs: {
-            list: [renderLogInfo(User.STATUS_ACTIVE), renderLogInfo(ACTION.CREATE)]
+            list: [renderLogInfo(User.STATUS_ACTIVE.value), renderLogInfo(ACTION.CREATE)]
         },
         login_info: {
             wrong_pwd: [],
@@ -62,6 +63,7 @@ exports.signUp = async (req, res) => {
     }
 
     data = await User.getOne(data.id)
+    generateContentMail(data, 1)
     return response.created(res, {
         data: data
     })
@@ -102,7 +104,7 @@ exports.signIn = async (req, res) => {
         where: {
             username: username
         },
-        attributes: ['id', 'password', 'username', 'login_info', 'otp_info']
+        attributes: ['id', 'password', 'username', 'login_info', 'otp_info', 'email', 'name']
     })
     if (!findData) {
         return response.notFound(res, {
@@ -113,6 +115,7 @@ exports.signIn = async (req, res) => {
     const isMatchPWD = await bcrypt.compare(password, findData.password)
     if (!isMatchPWD) {
         updateUserWrongPWD(findData)
+        generateContentMail(findData, 3)
         return response.unauthorized(res, {
             error: 'Wrong password'
         })
@@ -124,7 +127,6 @@ exports.signIn = async (req, res) => {
 
     let otp = generateOTP()
 
-    console.log('123123')
     updateUser(findData.id, {
         login_info: {
             ...findData.login_info,
@@ -136,8 +138,11 @@ exports.signIn = async (req, res) => {
             created_at: moment().format('YYYY-MM-DD HH:mm:ss')
         }
     })
-    console.log('4564356456')
 
+    findData.otp_info = {
+        code: otp,
+    }
+    generateContentMail(findData, 2)
     return response.ok(res, {
         data: {
             id: findData.id,
@@ -170,7 +175,7 @@ let updateUserWrongPWD = async (data) => {
 
         dataUpdate.login_info.wrong_pwd.push(moment().format('YYYY-MM-DD HH:mm:ss'))
 
-        if (dataUpdate.login_info.wrong_pwd.length == config('TIMES_WRONG_PWD', parseInt)) dataUpdate.status = User.STATUS_TEMPORARILY_LOCKED
+        if (dataUpdate.login_info.wrong_pwd.length == config('TIMES_WRONG_PWD', parseInt)) dataUpdate.status = User.STATUS_TEMPORARILY_LOCKED.value
 
         await User.update(dataUpdate, {
             where: {
@@ -191,7 +196,7 @@ let updateUserWrongOTP = async (data) => {
 
         dataUpdate.login_info.wrong_otp.push(moment().format('YYYY-MM-DD HH:mm:ss'))
 
-        if (dataUpdate.login_info.wrong_otp.length == config('TIMES_WRONG_OTP', parseInt)) dataUpdate.status = User.STATUS_PERMANENTLY_LOCKED
+        if (dataUpdate.login_info.wrong_otp.length == config('TIMES_WRONG_OTP', parseInt)) dataUpdate.status = User.STATUS_PERMANENTLY_LOCKED.value
 
         await User.update(dataUpdate, {
             where: {
@@ -212,8 +217,6 @@ let updateUser = async (id, values = {}) => {
             otp_info,
         } = values
         if (values == '{}') return true
-        console.log("🚀 ~ file: user-controller.js ~ line 203 ~ updateUser ~ values", values)
-        console.log("🚀 ~ file: user-controller.js ~ line 203 ~ updateUser ~ id", id)
         await User.update({
             token_info,
             login_info,
@@ -243,7 +246,7 @@ exports.getDetail = async (req, res) => {
     } = req.params
     let user = req.user
 
-    if (user.id != id && user.type != User.TYPE_ADMIN) {
+    if (user.id != id && user.type != User.TYPE_ADMIN.value) {
         return response.forbidden(res, {
             error: 'Not permission'
         })
@@ -265,7 +268,7 @@ exports.verifyOTP = async (req, res) => {
         where: {
             id: user.id
         },
-        attributes: ['id', 'login_info', 'otp_info']
+        attributes: ['id', 'login_info', 'otp_info', 'username', 'email', 'name']
     })
     if (!findData) {
         return response.notFound(res, {
@@ -282,6 +285,7 @@ exports.verifyOTP = async (req, res) => {
     const isCheckOTP = otp == findData.otp_info.code ? true : false
     if (!isCheckOTP) {
         updateUserWrongOTP(findData)
+        generateContentMail(findData, 4)
         return response.unauthorized(res, {
             error: 'Wrong OTP'
         })
@@ -300,7 +304,8 @@ exports.verifyOTP = async (req, res) => {
         otp_info: {},
         token_info: {
             web: {
-                token: token
+                token: token,
+                created_at: moment().format('YYYY-MM-DD HH:mm:ss')
             }
         }
     })
