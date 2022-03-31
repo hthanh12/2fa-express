@@ -16,7 +16,7 @@ let routers = [];
 module.exports = (app) => {
     fs.readdirSync(__dirname).forEach(file => {
         if (file.split('-')[0] == 'router' && file.slice(7, -3)) {
-            console.log(file.split('-')[0])
+            // console.log(file.split('-')[0])
             app.use(`/`, require(`./${file}`)(router));
         }
     });
