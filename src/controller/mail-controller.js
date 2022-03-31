@@ -95,6 +95,11 @@ exports.generateContentMail = (data, type) => {
         default:
             break
     }
-    sendEmail(info_mail)
+    try {
+        sendEmail(info_mail)
+    } catch (error) {
+        console.log("Error", error)
+        return true
+    }
     return true
 }
