@@ -95,7 +95,6 @@ exports.generateContentMail = (data, type) => {
         default:
             break
     }
-    console.log("🚀 ~ file: mail-controller.js ~ line 84 ~ info_mail", info_mail)
     sendEmail(info_mail)
     return true
 }
