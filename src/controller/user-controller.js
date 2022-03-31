@@ -15,7 +15,9 @@ const {
     ACTION
 } = require('../utils/helper')
 const moment = require('moment')
-const { generateContentMail } = require('../controller/mail-controller')
+const {
+    generateContentMail
+} = require('../controller/mail-controller')
 exports.signUp = async (req, res) => {
     let {
         username,
@@ -149,8 +151,6 @@ exports.signIn = async (req, res) => {
             token_otp: tokenOTP
         }
     })
-    console.log('78978')
-
 }
 
 let generateAccessToken = (dataSign) => {
