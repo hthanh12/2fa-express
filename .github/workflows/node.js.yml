@@ -20,7 +20,7 @@ jobs:
             - name: Build image
               run: |
                   touch .env
-                  cat "${{ secrets.ENV }}" > .env
+                  cat $ENV > .env
                   docker build -t 2fa:$VERSION .
 
             - name: Push image
