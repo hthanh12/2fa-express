@@ -9,8 +9,6 @@ RUN npm ci --only=production
 
 COPY --chown=node:node . .
 
-RUN cp .env.example .env
-
 USER node
 
 EXPOSE 3000
