@@ -17,7 +17,13 @@ jobs:
             - name: Log into registry
               run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            - name: Build image
+            - name: Build image 
+              with:
+                context: .
+                push: false
+                tags: user/app:latest
+                cache-from: type=local,src=/tmp/.buildx-cache
+                cache-to: type=local,dest=/tmp/.buildx-cache-new
               run: |
                   touch .env
                   cat $ENV > .env
